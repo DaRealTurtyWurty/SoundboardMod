@@ -1,0 +1,11 @@
+loaderVersion="[45,)"
+modLoader = "javafml"
+license = "GNU LGPL 3.0"
+[[mods]]
+    modId = "soundboard"
+    version = "${file.jarVersion}"
+    displayName = "SoundboardMod"
+    authors = "TurtyWurty"
+    description = '''
+    A mod that adds in a soundboard that can be played and other players in the world will hear it.
+    '''
