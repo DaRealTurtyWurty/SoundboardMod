@@ -1,4 +1,8 @@
 {
-  "key.soundboard.open": "Open Soundboard",
-  "gui.soundboard.open_soundboard.title": "Soundboard"
+    "key.soundboard.open": "Open Soundboard",
+    "gui.soundboard.open_soundboard.title": "Soundboard",
+    "gui.soundboard.add_sound.title": "Sound Adder",
+    "gui.soundboard.add_sound.create": "Create",
+    "gui.soundboard.add_sound.name": "Name",
+    "gui.soundboard.add_sound.sound_path": "Sound Path"
 }
