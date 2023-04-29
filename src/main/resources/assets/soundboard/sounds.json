@@ -1,0 +1,10 @@
+{
+    "soundboard_sound": {
+        "sounds": [
+            {
+                "name": "soundboard:empty",
+                "stream": true
+            }
+        ]
+    }
+}

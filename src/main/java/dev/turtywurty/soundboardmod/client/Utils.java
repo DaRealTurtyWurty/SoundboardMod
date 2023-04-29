@@ -1,11 +1,20 @@
 package dev.turtywurty.soundboardmod.client;
 
+import com.mojang.blaze3d.audio.Library;
+import dev.turtywurty.soundboardmod.SoundboardMod;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.ChannelAccess;
+import net.minecraft.client.sounds.SoundEngine;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class Utils {
     public static boolean isPosInArea(double x, double y, double width, double height, double posX, double posY) {
@@ -26,7 +35,7 @@ public class Utils {
         if(!Files.isRegularFile(path)) return false;
 
         String fileName = path.getFileName().toString();
-        return fileName.endsWith(".wav") || fileName.endsWith(".mp3") || fileName.endsWith(".ogg");
+        return fileName.endsWith(".ogg");
     }
 
     public static Optional<Path> findFirstSoundFile(List<Path> paths) {
@@ -37,15 +46,10 @@ public class Utils {
         if(!Files.isRegularFile(path)) return false;
 
         String fileName = path.getFileName().toString();
-        return fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".jpeg");
+        return fileName.endsWith(".png");
     }
 
     public static Optional<Path> findFirstImageFile(List<Path> paths) {
         return paths.stream().filter(Utils::isImageFile).findFirst();
-    }
-
-    public static boolean hasAlphaChannel(Path path) {
-        if(!isImageFile(path)) return false;
-        return path.getFileName().toString().endsWith(".png");
     }
 }

@@ -4,5 +4,7 @@
     "gui.soundboard.add_sound.title": "Sound Adder",
     "gui.soundboard.add_sound.create": "Create",
     "gui.soundboard.add_sound.name": "Name",
-    "gui.soundboard.add_sound.sound_path": "Sound Path"
+    "gui.soundboard.add_sound.sound_path": "Sound Path",
+    "gui.soundboard.add_sound.volume": "Volume",
+    "gui.soundboard.add_sound.pitch": "Pitch"
 }
