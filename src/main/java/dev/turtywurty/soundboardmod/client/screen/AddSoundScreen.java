@@ -21,11 +21,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.widget.ForgeSlider;
 import net.minecraftforge.client.gui.widget.ScrollPanel;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class AddSoundScreen extends Screen {
@@ -92,6 +91,15 @@ public class AddSoundScreen extends Screen {
                 new ForgeSlider(this.leftPos + 7, this.topPos + 148, 162, 20, Component.empty(), Component.literal("%"),
                         0, 100, 100, 1, 1, true));
 
+        this.scrollPanel.addComponent(new TextWidget(this.leftPos + 8, this.topPos + 25,
+                new TextData.Builder().component(() -> NAME_FIELD).build()));
+        this.scrollPanel.addComponent(new TextWidget(this.leftPos + 8, this.topPos + 62,
+                new TextData.Builder().component(() -> SOUND_PATH_FIELD).build()));
+        this.scrollPanel.addComponent(new TextWidget(this.leftPos + 8, this.topPos + 99,
+                new TextData.Builder().component(() -> VOLUME_SLIDER).build()));
+        this.scrollPanel.addComponent(new TextWidget(this.leftPos + 8, this.topPos + 136,
+                new TextData.Builder().component(() -> PITCH_SLIDER).build()));
+
         this.createButton = addRenderableWidget(new CreateButton());
     }
 
@@ -105,13 +113,6 @@ public class AddSoundScreen extends Screen {
         blit(pPoseStack, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         super.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
-
-        // Render labels
-        this.font.draw(pPoseStack, TITLE, this.leftPos + 8, this.topPos + 8, 0x404040);
-        this.font.draw(pPoseStack, NAME_FIELD, this.leftPos + 8, this.topPos + 25, 0x404040);
-        this.font.draw(pPoseStack, SOUND_PATH_FIELD, this.leftPos + 8, this.topPos + 62, 0x404040);
-        this.font.draw(pPoseStack, VOLUME_SLIDER, this.leftPos + 8, this.topPos + 99, 0x404040);
-        this.font.draw(pPoseStack, PITCH_SLIDER, this.leftPos + 8, this.topPos + 136, 0x404040);
 
 //        // Render image preview
 //        RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -139,6 +140,7 @@ public class AddSoundScreen extends Screen {
 
     public class InformationScrollPanel extends ScrollPanel {
         private final List<AbstractWidget> components = new ArrayList<>();
+        private final Map<AbstractWidget, Vector2i> originalPositions = new HashMap<>();
 
         public InformationScrollPanel() {
             super(AddSoundScreen.this.minecraft, 162, 140, AddSoundScreen.this.topPos + 25,
@@ -147,30 +149,46 @@ public class AddSoundScreen extends Screen {
 
         public <T extends AbstractWidget> T addComponent(T component) {
             this.components.add(AddSoundScreen.this.addWidget(component));
+            this.originalPositions.put(component, new Vector2i(component.getX(), component.getY()));
             return component;
         }
 
         @Override
         protected int getContentHeight() {
-            return this.components.stream().mapToInt(widget -> widget.getY() + widget.getHeight()).max().orElse(0);
+            return this.originalPositions.entrySet().stream()
+                    .mapToInt(entry -> entry.getValue().y() + entry.getKey().getHeight()).max().orElse(this.height);
         }
 
         @Override
         protected void drawPanel(PoseStack poseStack, int entryRight, int relativeY, Tesselator tess, int mouseX, int mouseY) {
-            GuiComponent.enableScissor(this.left, this.top, this.width, this.height);
+            GuiComponent.enableScissor(this.left, this.top, this.left + this.width, this.top + this.height);
 
             // if the component is above the top of the screen or below the bottom, don't draw it
-            this.components.stream()
-                    .filter(component -> component.getY() > relativeY && component.getY() < relativeY + this.height)
+            List<AbstractWidget> widgets = this.originalPositions.entrySet().stream()
+                    .filter(entry -> entry.getValue().y() > relativeY && entry.getValue().y() < relativeY + this.height)
+                    .map(Map.Entry::getKey).toList();
+            widgets.forEach(component -> renderComponent(component, poseStack, mouseX, mouseY, relativeY));
+
+            // for all the other widgets, set them to not active so they don't render
+            this.components.stream().filter(component -> !widgets.contains(component))
                     .forEach(component -> {
-                        // translate the component to be in the correct position (using the relativeY)
-                        poseStack.pushPose();
-                        poseStack.translate(0, -relativeY, 0);
-                        component.render(poseStack, mouseX, mouseY, Minecraft.getInstance().getPartialTick());
-                        poseStack.popPose();
+                        component.active = false;
+
+                        Vector2i originalPos = this.originalPositions.get(component);
+                        component.setPosition(originalPos.x(), originalPos.y());
                     });
 
             GuiComponent.disableScissor();
+        }
+
+        private void renderComponent(AbstractWidget widget, PoseStack poseStack, int mouseX, int mouseY, int relativeY) {
+            widget.active = true;
+
+            poseStack.pushPose();
+            poseStack.translate(0, -(this.top + this.border - relativeY), 0);
+            widget.setY(this.originalPositions.get(widget).y() - (this.top + this.border - relativeY));
+            widget.render(poseStack, mouseX, mouseY, Minecraft.getInstance().getPartialTick());
+            poseStack.popPose();
         }
 
         @Override
@@ -273,8 +291,8 @@ public class AddSoundScreen extends Screen {
         private final TextData textData;
         private final Font font = Minecraft.getInstance().font;
 
-        public TextWidget(int pX, int pY, int pWidth, int pHeight, TextData textData) {
-            super(pX, pY, pWidth, pHeight, Component.empty());
+        public TextWidget(int pX, int pY, TextData textData) {
+            super(pX, pY, 0, 0, Component.empty());
             this.textData = textData;
         }
 
@@ -292,6 +310,8 @@ public class AddSoundScreen extends Screen {
             poseStack.translate(getX() + xOffset, getY(), 0);
 
             poseStack.scale(this.textData.scale().x, this.textData.scale().y, 1);
+            this.width = (int) (this.font.width(component) * this.textData.scale().x);
+            this.height = (int) (this.font.lineHeight * this.textData.scale().y);
 
             if (this.textData.shadow()) {
                 this.font.drawShadow(poseStack, component, 0, 0, this.textData.color());
